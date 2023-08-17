@@ -16,6 +16,8 @@ struct entry {
 struct entry *table[NBUCKET];
 int keys[NKEYS];
 int nthread = 1;
+pthread_mutex_t locks[NBUCKET]; // 每个bucket对应的互斥锁
+
 
 double
 now()
@@ -51,7 +53,9 @@ void put(int key, int value)
     e->value = value;
   } else {
     // the new is new.
+    pthread_mutex_lock(&locks[i]);//加锁操作
     insert(key, value, &table[i], table[i]);
+    pthread_mutex_unlock(&locks[i]);//释放锁操作
   }
 }
 
@@ -115,6 +119,11 @@ main(int argc, char *argv[])
     keys[i] = random();
   }
 
+  //初始化进程锁
+  for(int i=0;i<NBUCKET;i++)
+  {
+    pthread_mutex_init(&locks[i],NULL);
+  }
   //
   // first the puts
   //
